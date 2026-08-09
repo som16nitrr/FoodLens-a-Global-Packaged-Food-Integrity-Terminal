@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FoodLens — Global Packaged Food Integrity Terminal</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+/* ================= THEME VARIABLES ================= */
+:root{
+  --bg:#0b1020; --bg2:#121a33; --panel:#161f3d; --panel2:#1d2a52;
+  --line:rgba(255,255,255,.08); --txt:#eaf0ff; --sub:#9fb0d8; --mut:#6b7aa8;
+  --accent:#4ea1ff; --accent2:#7c5cff; --good:#2fd48a; --warn:#ffca42; --bad:#ff5d6c;
+  --chip:#22305c; --glow:rgba(78,161,255,.35);
+  --font:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+[data-theme="solar"]{
+  --bg:#eef2fb; --bg2:#e2e8f7; --panel:#ffffff; --panel2:#f3f6ff;
+  --line:rgba(20,30,60,.10); --txt:#12203f; --sub:#48597f; --mut:#8593b5;
+  --accent:#2563eb; --accent2:#7c3aed; --good:#12a565; --warn:#d98a00; --bad:#e23b52;
+  --chip:#eaf0ff; --glow:rgba(37,99,235,.20);
+}
+[data-theme="emerald"]{
+  --bg:#04140f; --bg2:#082018; --panel:#0c241b; --panel2:#123326;
+  --line:rgba(255,255,255,.08); --txt:#e6fff4; --sub:#93cdb4; --mut:#5f9e83;
+  --accent:#22d38f; --accent2:#4ee0c0; --good:#2fd48a; --warn:#ffca42; --bad:#ff6b7a;
+  --chip:#123c2c; --glow:rgba(34,211,143,.30);
+}
+[data-theme="crimson"]{
+  --bg:#160810; --bg2:#210b16; --panel:#2a0f1c; --panel2:#3a1526;
+  --line:rgba(255,255,255,.08); --txt:#ffeef3; --sub:#e2a6b8; --mut:#b3728a;
+  --accent:#ff5d8f; --accent2:#ff9d5c; --good:#3fd6a0; --warn:#ffca42; --bad:#ff4d63;
+  --chip:#43182a; --glow:rgba(255,93,143,.30);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:radial-gradient(1200px 600px at 80% -10%,var(--bg2),var(--bg)) fixed;
+  color:var(--txt);font-family:var(--font);line-height:1.5;transition:.4s}
+a{color:var(--accent)}
+::-webkit-scrollbar{height:10px;width:10px}
+::-webkit-scrollbar-thumb{background:var(--panel2);border-radius:8px}
+
+.wrap{max-width:1400px;margin:0 auto;padding:0 22px}
+
+/* ============ HEADER ============ */
+header.top{padding:26px 0 16px;position:relative}
+.brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;font-size:28px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 8px 30px var(--glow)}
+.brand h1{font-size:26px;letter-spacing:.5px}
+.brand h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag{color:var(--sub);font-size:13.5px;margin-top:3px}
+.themes{margin-left:auto;display:flex;gap:8px;align-items:center}
+.themes small{color:var(--mut);font-size:11px;margin-right:2px}
+.tbtn{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);cursor:pointer;transition:.2s}
+.tbtn:hover{transform:scale(1.15)}
+.tbtn.a{background:linear-gradient(135deg,#4ea1ff,#7c5cff)}
+.tbtn.s{background:linear-gradient(135deg,#2563eb,#7c3aed)}
+.tbtn.e{background:linear-gradient(135deg,#22d38f,#4ee0c0)}
+.tbtn.c{background:linear-gradient(135deg,#ff5d8f,#ff9d5c)}
+.disc{margin-top:14px;font-size:12px;color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);padding:7px 12px;border-radius:9px;display:inline-block}
+
+/* ============ CONTROL BAR ============ */
+.controls{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:14px 0;margin-top:14px}
+.ctrl-grid{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--mut)}
+select{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:11px;
+  padding:11px 14px;font-size:14.5px;font-family:var(--font);min-width:240px;cursor:pointer;outline:none;transition:.2s}
+select:hover{border-color:var(--accent)}
+select:focus{box-shadow:0 0 0 3px var(--glow)}
+.livechips{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;align-items:center}
+.lc{font-size:12px;padding:6px 11px;border-radius:20px;background:var(--chip);color:var(--sub);border:1px solid var(--line)}
+.lc b{color:var(--txt)}
+
+/* ============ SECTIONS ============ */
+section{margin:34px 0}
+.sec-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.sec-head .n{width:30px;height:30px;border-radius:9px;background:var(--panel2);display:grid;place-items:center;
+  font-size:14px;font-weight:700;color:var(--accent);border:1px solid var(--line)}
+.sec-head h2{font-size:19px}
+.sec-head p{color:var(--sub);font-size:13px;margin-left:2px}
+
+.card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+  border-radius:18px;padding:20px;transition:.3s;position:relative;overflow:hidden}
+.card:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:0 12px 40px rgba(0,0,0,.25)}
+
+/* ===== HERO ===== */
+.hero{display:grid;grid-template-columns:300px 1fr;gap:20px}
+@media(max-width:900px){.hero{grid-template-columns:1fr}}
+.gaugewrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;position:relative}
+.gauge-c{position:relative;width:210px;height:210px}
+.gauge-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge-center .big{font-size:52px;font-weight:800;line-height:1}
+.gauge-center .of{font-size:12px;color:var(--mut)}
+.stars{font-size:22px;letter-spacing:3px}
+.prod-title{display:flex;align-items:center;gap:12px}
+.prod-emoji{font-size:40px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4))}
+.prod-title h3{font-size:23px}
+.prod-title .cat{color:var(--sub);font-size:13px}
+.prod-tag{color:var(--sub);font-size:13.5px;margin:8px 0 14px;font-style:italic}
+.pill-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.pill{font-size:12px;padding:6px 12px;border-radius:20px;font-weight:600;display:flex;align-items:center;gap:6px}
+.pill.bad{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad);border:1px solid color-mix(in srgb,var(--bad) 40%,transparent)}
+.pill.good{background:color-mix(in srgb,var(--good) 15%,transparent);color:var(--good);border:1px solid color-mix(in srgb,var(--good) 40%,transparent)}
+.pill.info{background:var(--chip);color:var(--sub);border:1px solid var(--line)}
+.lbl{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);margin:14px 0 7px}
+.alts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:700px){.alts{grid-template-columns:1fr}}
+.alt{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:12px;transition:.25s}
+.alt:hover{transform:translateY(-3px);border-color:var(--good)}
+.alt .an{font-weight:700;font-size:14px}
+.alt .ab{font-size:11px;color:var(--mut)}
+.alt .aw{font-size:12px;color:var(--sub);margin:5px 0 8px}
+.alt .as{font-size:12px;font-weight:700;color:var(--good)}
+.hero-right{display:flex;flex-direction:column}
+.macro-mini{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px}
+.mm{flex:1;min-width:90px;background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:10px 12px;text-align:center}
+.mm .v{font-size:20px;font-weight:800}
+.mm .k{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
+
+/* ===== RANKING ===== */
+.rankgrid{display:grid;grid-template-columns:1.3fr 1fr;gap:20px}
+@media(max-width:900px){.rankgrid{grid-template-columns:1fr}}
+.ranklist{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;padding-right:6px}
+.rrow{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:11px;background:var(--chip);border:1px solid var(--line);transition:.2s}
+.rrow:hover{transform:translateX(4px)}
+.rrow.best{border-color:var(--good);box-shadow:0 0 0 1px var(--good) inset}
+.rrow.worst{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad) inset}
+.rrow.you{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.rrank{font-weight:800;color:var(--mut);width:22px}
+.rflag{font-size:20px}
+.rname{flex:1;font-size:14px}
+.rname small{color:var(--mut);font-size:11px;display:block}
+.rbar{width:120px;height:8px;background:var(--panel);border-radius:6px;overflow:hidden}
+.rbar i{display:block;height:100%;border-radius:6px}
+.rscore{font-weight:800;width:34px;text-align:right}
+
+/* ===== THREE COUNTRY ===== */
+.tri{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:900px){.tri{grid-template-columns:1fr}}
+.tcard{padding:0;overflow:hidden}
+.tcard .band{padding:10px 16px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#fff}
+.band.best{background:linear-gradient(90deg,#0e9e63,#1fd18a)}
+.band.worst{background:linear-gradient(90deg,#c02b3c,#ff5d6c)}
+.band.you{background:linear-gradient(90deg,#2b6fd1,#4ea1ff)}
+.tbody{padding:16px}
+.tflag{font-size:34px}
+.tcnt{display:flex;align-items:center;gap:10px}
+.tcnt h4{font-size:16px}
+.tscore{font-size:34px;font-weight:800;margin:6px 0 2px}
+.tprogress{height:7px;background:var(--panel);border-radius:6px;overflow:hidden;margin:6px 0 12px}
+.tprogress i{display:block;height:100%}
+.mini-flags{display:flex;flex-wrap:wrap;gap:5px}
+.mini-flags .pill{font-size:10.5px;padding:4px 9px}
+
+/* ===== COMPARISON TABLE ===== */
+.cmpgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:900px){.cmpgrid{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.ing-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:700px){.ing-cols{grid-template-columns:1fr}}
+.ingcol h5{font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.ingcol ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.ingcol li{font-size:12px;padding:6px 9px;background:var(--chip);border-radius:8px;border:1px solid var(--line)}
+.addbadge{font-size:10px;padding:2px 7px;border-radius:10px;margin-left:6px;font-weight:700}
+.addbadge.flagged{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.addbadge.allowed{background:color-mix(in srgb,var(--good) 15%,transparent);color:var(--good)}
+
+/* ===== LEGAL / SCIENCE ===== */
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:900px){.twocol{grid-template-columns:1fr}}
+.timeline{display:flex;flex-direction:column;gap:12px}
+.tl{display:flex;gap:12px}
+.tl .dot{flex-shrink:0;width:44px;height:44px;border-radius:11px;background:var(--panel2);display:grid;place-items:center;
+  font-size:12px;font-weight:800;color:var(--bad);border:1px solid var(--line)}
+.tl .body{flex:1}
+.tl .body .t{font-weight:700;font-size:14px}
+.tl .body .m{font-size:12.5px;color:var(--sub);margin:2px 0 4px}
+.tl .body .o{font-size:12px;color:var(--good)}
+.tl .body .cc{font-size:11px;color:var(--mut)}
+.reg{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:10px}
+.reg .code{font-family:ui-monospace,monospace;font-size:12px;color:var(--warn);font-weight:700}
+.reg .rd{font-size:12.5px;color:var(--sub);margin-top:4px}
+.sci{border-left:3px solid var(--accent2);padding:4px 0 4px 14px;margin-bottom:14px}
+.sci .st{font-weight:700;font-size:14px}
+.sci .ss{font-size:11px;color:var(--mut);margin:2px 0}
+.sci .sf{font-size:12.5px;color:var(--sub)}
+
+.chartbox{position:relative;height:300px}
+.chartbox.sm{height:230px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+
+footer{margin:50px 0 30px;padding-top:20px;border-top:1px solid var(--line);color:var(--mut);font-size:12px;text-align:center}
+.fade{animation:fade .5s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body data-theme="dark">
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header class="top">
+    <div class="brand">
+      <div class="logo">🔬</div>
+      <div>
+        <h1>Food<span>Lens</span> — Global Packaged Food Integrity Terminal</h1>
+        <div class="tag">Same product · different country · different formulation. Track how food-safety laws reshape what's actually in your pack.</div>
+      </div>
+      <div class="themes">
+        <small>THEME</small>
+        <div class="tbtn a" title="Midnight" onclick="setTheme('dark')"></div>
+        <div class="tbtn s" title="Solar (light)" onclick="setTheme('solar')"></div>
+        <div class="tbtn e" title="Emerald" onclick="setTheme('emerald')"></div>
+        <div class="tbtn c" title="Crimson" onclick="setTheme('crimson')"></div>
+      </div>
+    </div>
+    <div class="disc">⚠️ PROTOTYPE — All figures are illustrative dummy data for demonstration only. Not verified nutritional, legal, or scientific facts.</div>
+  </header>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="wrap" style="padding:0">
+      <div class="ctrl-grid">
+        <div class="field">
+          <label>🌍 Your Country</label>
+          <select id="countrySel" onchange="render()"></select>
+        </div>
+        <div class="field">
+          <label>🛒 Select Product</label>
+          <select id="productSel" onchange="render()"></select>
+        </div>
+        <div class="livechips" id="liveChips"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: HERO OVERALL SCORE -->
+  <section id="s1">
+    <div class="sec-head"><div class="n">1</div><div>
+      <h2>Overall Product Score — In Your Country</h2>
+      <p>Composite integrity rating with nutritional flags, benefits and healthier alternatives</p></div>
+    </div>
+    <div class="card hero" id="heroCard"></div>
+  </section>
+
+  <!-- SECTION 2: COUNTRY RANKING -->
+  <section id="s2">
+    <div class="sec-head"><div class="n">2</div><div>
+      <h2>Country Ranking For This Product</h2>
+      <p>Ingredient-integrity score out of 100 across all tracked markets — see where your pack sits</p></div>
+    </div>
+    <div class="card">
+      <div class="rankgrid">
+        <div class="chartbox"><canvas id="rankChart"></canvas></div>
+        <div class="ranklist" id="rankList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: THREE COUNTRY DEEP DIVE -->
+  <section id="s3">
+    <div class="sec-head"><div class="n">3</div><div>
+      <h2>Deep Dive — Best vs Worst vs You</h2>
+      <p>Three-way spotlight on the highest-quality market, the lowest-quality market, and your own</p></div>
+    </div>
+    <div class="tri" id="triCards"></div>
+  </section>
+
+  <!-- SECTION 4: SIDE BY SIDE COMPARISON -->
+  <section id="s4">
+    <div class="sec-head"><div class="n">4</div><div>
+      <h2>Side-by-Side — Nutrition &amp; Ingredients</h2>
+      <p>Direct comparison of nutritional load, macro split and label ingredients across the three markets</p></div>
+    </div>
+    <div class="grid2" style="margin-bottom:20px">
+      <div class="card">
+        <div class="lbl">Nutritional load (per 100g/ml)</div>
+        <div class="chartbox"><canvas id="nutBar"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="lbl">Nutrient fingerprint (radar)</div>
+        <div class="chartbox"><canvas id="radar"></canvas></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="lbl">Full nutrition comparison</div>
+      <div style="overflow-x:auto"><table id="nutTable"></table></div>
+    </div>
+    <div class="card">
+      <div class="lbl">Ingredient labels &amp; additive status</div>
+      <div class="ing-cols" id="ingCols"></div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: LEGAL & REGULATORY -->
+  <section id="s5">
+    <div class="sec-head"><div class="n">5</div><div>
+      <h2>Legal &amp; Regulatory Intelligence</h2>
+      <p>Publicly-reported lawsuits (dummy) and the safety-regulation gaps used to justify cheaper formulations</p></div>
+    </div>
+    <div class="twocol">
+      <div class="card">
+        <div class="lbl">⚖️ Lawsuits &amp; recalls (illustrative)</div>
+        <div class="timeline" id="lawTimeline"></div>
+      </div>
+      <div class="card">
+        <div class="lbl">📋 Regulation gaps exploited</div>
+        <div id="regList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: SCIENCE -->
+  <section id="s6">
+    <div class="sec-head"><div class="n">6</div><div>
+      <h2>Scientific Research Signals</h2>
+      <p>Peer-reviewed style findings (dummy) tied to this product's key ingredients — the "why it matters"</p></div>
+    </div>
+    <div class="grid2">
+      <div class="card" id="sciList"></div>
+      <div class="card">
+        <div class="lbl">Additive count vs integrity score — all markets</div>
+        <div class="chartbox"><canvas id="scatter"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    FoodLens Prototype · Built as a design & analytics concept · All data is fictional/illustrative.<br>
+    Nutritional · Legal · Scientific · Regulatory — a complete-picture food integrity lens.
+  </footer>
+</div>
+
+<!-- DATA -->
+<script>/* ============================================================
+   FOODLENS — Global Packaged Food Integrity Terminal
+   PROTOTYPE DATA (dummy / illustrative — NOT verified facts)
+   Concept: same product, different formulation per country
+   ============================================================ */
+
+const COUNTRIES = {
+  USA:  { name: "United States", flag: "🇺🇸" },
+  MEX:  { name: "Mexico",        flag: "🇲🇽" },
+  IND:  { name: "India",         flag: "🇮🇳" },
+  GBR:  { name: "United Kingdom",flag: "🇬🇧" },
+  DEU:  { name: "Germany",       flag: "🇩🇪" },
+  FRA:  { name: "France",        flag: "🇫🇷" },
+  AUS:  { name: "Australia",     flag: "🇦🇺" },
+  JPN:  { name: "Japan",         flag: "🇯🇵" },
+  CHN:  { name: "China",         flag: "🇨🇳" },
+  BRA:  { name: "Brazil",        flag: "🇧🇷" }
+};
+
+/* Nutrition axes are per 100g/100ml. "additives" = count of synthetic
+   additives/colours/preservatives on the label (lower is better). */
+
+const PRODUCTS = [
+  {
+    id: "coke", name: "Cola Classic", brand: "GlobalCola", emoji: "🥤",
+    category: "Carbonated Soft Drink",
+    tagline: "The world's most recognised soda — sweetener swaps by geography.",
+    countries: {
+      USA: { s5:1.5, s100:38, sweetener:"High-Fructose Corn Syrup (HFCS-55)",
+        nutrition:{sugar:39,fat:0,sodium:11,caffeine:9.7,calories:190,protein:0,additives:5},
+        flags:["Very High Sugar","Caffeine","Phosphoric Acid","Caramel Colour E150d"],
+        benefits:["Fat free"],
+        ingredients:["Carbonated water","HFCS-55","Caramel colour (E150d)","Phosphoric acid","Natural flavours","Caffeine"],
+        additives:[{n:"Caramel Colour E150d (4-MEI)",st:"flagged"},{n:"Phosphoric Acid",st:"allowed"},{n:"HFCS-55",st:"flagged"}] },
+      MEX: { s5:2.5, s100:55, sweetener:"Cane Sugar (Sucrose)",
+        nutrition:{sugar:35,fat:0,sodium:9,caffeine:9.7,calories:180,protein:0,additives:3},
+        flags:["High Sugar","Caffeine"],
+        benefits:["Real cane sugar (no HFCS)","Fewer additives"],
+        ingredients:["Carbonated water","Cane sugar","Caramel colour (E150d)","Phosphoric acid","Natural flavours","Caffeine"],
+        additives:[{n:"Caramel Colour E150d",st:"allowed"},{n:"Cane Sugar",st:"allowed"}] },
+      IND: { s5:1.5, s100:36, sweetener:"Sugar + Acidity Regulators",
+        nutrition:{sugar:36,fat:0,sodium:14,caffeine:8.5,calories:176,protein:0,additives:5},
+        flags:["Very High Sugar","Pesticide-residue history","Caffeine"],
+        benefits:["Fat free"],
+        ingredients:["Carbonated water","Sugar","Caramel colour (INS 150d)","Acidity regulators (338,330)","Caffeine"],
+        additives:[{n:"INS 150d",st:"allowed"},{n:"Acidity regulator 338",st:"allowed"}] },
+      GBR: { s5:2.0, s100:48, sweetener:"Sugar + Sweeteners (Sugar Tax reformulation)",
+        nutrition:{sugar:11,fat:0,sodium:11,caffeine:9.7,calories:42,protein:0,additives:6},
+        flags:["Contains Aspartame","Acesulfame-K"],
+        benefits:["Reduced sugar (UK sugar levy)","Lower calories"],
+        ingredients:["Carbonated water","Sugar","Sweeteners (aspartame, acesulfame-K)","Caramel colour","Phosphoric acid","Caffeine"],
+        additives:[{n:"Aspartame E951",st:"allowed"},{n:"Acesulfame-K E950",st:"allowed"}] },
+      DEU: { s5:2.5, s100:56, sweetener:"Sugar (EU spec)",
+        nutrition:{sugar:10.6,fat:0,sodium:0,caffeine:9.7,calories:42,protein:0,additives:3},
+        flags:["Caffeine"],
+        benefits:["Lower sugar EU recipe","Minimal additives","No HFCS"],
+        ingredients:["Carbonated water","Sugar","Caramel colour (E150d)","Phosphoric acid","Natural flavours","Caffeine"],
+        additives:[{n:"E150d",st:"allowed"}] },
+      FRA: { s5:2.5, s100:57, sweetener:"Sugar (EU spec)",
+        nutrition:{sugar:10.6,fat:0,sodium:0,caffeine:9.7,calories:42,protein:0,additives:3},
+        flags:["Caffeine"],
+        benefits:["No HFCS","Clean EU additive list"],
+        ingredients:["Eau gazéifiée","Sucre","Colorant E150d","Acide phosphorique","Arômes naturels","Caféine"],
+        additives:[{n:"E150d",st:"allowed"}] },
+      AUS: { s5:2.0, s100:47, sweetener:"Sugar / Cane Sugar",
+        nutrition:{sugar:10.6,fat:0,sodium:10,caffeine:9.6,calories:180,protein:0,additives:4},
+        flags:["High Sugar","Caffeine"],
+        benefits:["Health Star Rating labelled"],
+        ingredients:["Carbonated water","Cane sugar","Colour (150d)","Food acid (338)","Flavour","Caffeine"],
+        additives:[{n:"150d",st:"allowed"},{n:"338",st:"allowed"}] },
+      JPN: { s5:3.0, s100:62, sweetener:"Sugar (reduced) / Stevia blends",
+        nutrition:{sugar:9,fat:0,sodium:8,caffeine:9.5,calories:45,protein:0,additives:2},
+        flags:["Caffeine"],
+        benefits:["Lowest sugar variant","Fewest additives","Stevia blend options"],
+        ingredients:["Carbonated water","Sugar","Stevia","Caramel colour","Flavour","Caffeine"],
+        additives:[{n:"Stevia",st:"allowed"}] },
+      CHN: { s5:1.5, s100:35, sweetener:"HFCS + Sugar blend",
+        nutrition:{sugar:40,fat:0,sodium:15,caffeine:10,calories:192,protein:0,additives:6},
+        flags:["Very High Sugar","HFCS","Caffeine","Multiple additives"],
+        benefits:["Fat free"],
+        ingredients:["Carbonated water","HFCS","Sugar","Caramel colour","Phosphoric acid","Preservatives","Caffeine"],
+        additives:[{n:"HFCS",st:"flagged"},{n:"Preservative (211)",st:"flagged"}] },
+      BRA: { s5:2.0, s100:46, sweetener:"Sugar",
+        nutrition:{sugar:37,fat:0,sodium:12,caffeine:9,calories:180,protein:0,additives:4},
+        flags:["High Sugar","Front-of-pack warning label","Caffeine"],
+        benefits:["Mandatory ANVISA warning seal"],
+        ingredients:["Água gaseificada","Açúcar","Corante caramelo IV","Ácido fosfórico","Aroma natural","Cafeína"],
+        additives:[{n:"Corante caramelo IV",st:"allowed"}] }
+    },
+    lawsuits:[
+      {year:2012,country:"USA",title:"4-MEI Caramel Colour Suit",desc:"Class action over carcinogenic 4-methylimidazole in caramel colouring.",outcome:"Recipe adjusted in California to avoid Prop-65 warning."},
+      {year:2017,country:"IND",title:"Pesticide Residue PIL",desc:"Public-interest litigation alleging pesticide residues above EU norms.",outcome:"Disputed; independent testing ordered."},
+      {year:2021,country:"BRA",title:"Front-of-pack Warning Dispute",desc:"Industry challenge to ANVISA high-sugar warning seals.",outcome:"Warning label upheld."}
+    ],
+    bypass:[
+      {code:"US 21 CFR 184.1866",desc:"HFCS classified GRAS in USA — permits cheap corn syrup unavailable under stricter EU sugar norms."},
+      {code:"EU No 1333/2008",desc:"EU additive list forces cleaner formulation; caramel-colour 4-MEI capped far below US levels."}
+    ],
+    science:[
+      {title:"Sugar-sweetened beverages & metabolic risk",source:"Meta-analysis (dummy)",finding:"Daily SSB intake linked to +26% type-2 diabetes risk."},
+      {title:"HFCS vs sucrose hepatic response",source:"Nutrition Journal (dummy)",finding:"HFCS variants showed higher de-novo lipogenesis markers."}
+    ],
+    alternatives:[
+      {name:"Sparkling Water + Lime",brand:"Generic",why:"Zero sugar, zero additives",s100:96},
+      {name:"Kombucha (unsweetened)",brand:"Craft",why:"Probiotic, low sugar",s100:82},
+      {name:"Stevia Cola",brand:"CleanLabel Co",why:"No HFCS, plant sweetener",s100:74}
+    ]
+  },
+
+  {
+    id: "nutella", name: "Hazelnut Cocoa Spread", brand: "NutСream", emoji: "🍫",
+    category: "Sweet Spread",
+    tagline: "Palm-oil and sugar ratios shift across markets.",
+    countries: {
+      USA: { s5:1.5, s100:34, sweetener:"Sugar + Palm Oil",
+        nutrition:{sugar:57,fat:31,sodium:41,caffeine:0,calories:539,protein:6,additives:2},
+        flags:["Very High Sugar","High Saturated Fat","Palm Oil","Vanillin"],
+        benefits:["Source of some minerals"],
+        ingredients:["Sugar","Palm oil","Hazelnuts (13%)","Cocoa","Skim milk","Lecithin","Vanillin"],
+        additives:[{n:"Artificial Vanillin",st:"flagged"},{n:"Palm Oil",st:"flagged"}] },
+      DEU: { s5:2.5, s100:55, sweetener:"Sugar + Palm Oil (higher hazelnut)",
+        nutrition:{sugar:54,fat:30,sodium:36,caffeine:0,calories:530,protein:7,additives:1},
+        flags:["High Sugar","High Saturated Fat"],
+        benefits:["Higher hazelnut/cocoa content","Real vanillin removed in some batches"],
+        ingredients:["Sugar","Palm oil","Hazelnuts (13%)","Cocoa","Skim milk","Lecithin"],
+        additives:[{n:"Lecithin (Sunflower)",st:"allowed"}] },
+      IND: { s5:1.5, s100:33, sweetener:"Sugar + Palm Oil",
+        nutrition:{sugar:56,fat:32,sodium:40,caffeine:0,calories:544,protein:6,additives:3},
+        flags:["Very High Sugar","High Saturated Fat","Palm Oil","Added flavours"],
+        benefits:["Calcium from milk solids"],
+        ingredients:["Sugar","Palm oil","Hazelnuts","Cocoa solids","Milk solids","Emulsifier (322)","Flavour"],
+        additives:[{n:"Emulsifier 322",st:"allowed"},{n:"Added flavour",st:"flagged"}] },
+      FRA: { s5:2.5, s100:56, sweetener:"Sugar + Palm Oil (EU)",
+        nutrition:{sugar:53,fat:30,sodium:35,caffeine:0,calories:528,protein:7,additives:1},
+        flags:["High Sugar","High Saturated Fat"],
+        benefits:["Nutri-Score labelled","Cleaner additive list"],
+        ingredients:["Sucre","Huile de palme","Noisettes 13%","Cacao","Lait écrémé","Lécithine"],
+        additives:[{n:"Lécithine",st:"allowed"}] },
+      GBR: { s5:2.0, s100:47, sweetener:"Sugar + Palm Oil",
+        nutrition:{sugar:56,fat:31,sodium:38,caffeine:0,calories:539,protein:6,additives:1},
+        flags:["High Sugar","High Saturated Fat","Palm Oil"],
+        benefits:["Traffic-light label (mostly red)"],
+        ingredients:["Sugar","Palm oil","Hazelnuts","Cocoa","Skimmed milk","Lecithin"],
+        additives:[{n:"Lecithin",st:"allowed"}] },
+      CHN: { s5:1.5, s100:32, sweetener:"Sugar + Palm Oil",
+        nutrition:{sugar:58,fat:32,sodium:44,caffeine:0,calories:548,protein:5,additives:4},
+        flags:["Very High Sugar","High Saturated Fat","Palm Oil","Multiple emulsifiers"],
+        benefits:[],
+        ingredients:["Sugar","Palm oil","Hazelnuts","Cocoa","Milk powder","Emulsifiers","Preservative","Flavour"],
+        additives:[{n:"Preservative",st:"flagged"},{n:"Extra emulsifier",st:"flagged"}] },
+      BRA: { s5:1.5, s100:38, sweetener:"Sugar + Palm Oil",
+        nutrition:{sugar:56,fat:31,sodium:39,caffeine:0,calories:540,protein:6,additives:2},
+        flags:["High Sugar","High Saturated Fat","ANVISA warning seal"],
+        benefits:["Front-of-pack warning transparency"],
+        ingredients:["Açúcar","Óleo de palma","Avelãs","Cacau","Leite","Lecitina"],
+        additives:[{n:"Lecitina",st:"allowed"}] },
+      JPN: { s5:2.5, s100:52, sweetener:"Sugar + Palm Oil (reduced portion)",
+        nutrition:{sugar:52,fat:29,sodium:34,caffeine:0,calories:520,protein:7,additives:1},
+        flags:["High Sugar","High Saturated Fat"],
+        benefits:["Smaller portion norms","Clean label"],
+        ingredients:["Sugar","Palm oil","Hazelnuts","Cocoa","Milk","Lecithin"],
+        additives:[{n:"Lecithin",st:"allowed"}] },
+      MEX: { s5:1.5, s100:36, sweetener:"Sugar + Palm Oil",
+        nutrition:{sugar:57,fat:31,sodium:40,caffeine:0,calories:541,protein:6,additives:2},
+        flags:["Very High Sugar","High Saturated Fat","Black warning octagons"],
+        benefits:["Mandatory NOM-051 warning labels"],
+        ingredients:["Azúcar","Aceite de palma","Avellanas","Cacao","Leche","Lecitina"],
+        additives:[{n:"Lecitina",st:"allowed"}] },
+      AUS: { s5:2.0, s100:46, sweetener:"Sugar + Palm Oil",
+        nutrition:{sugar:56,fat:31,sodium:38,caffeine:0,calories:539,protein:6,additives:2},
+        flags:["High Sugar","High Saturated Fat"],
+        benefits:["Health Star Rating (1.5)"],
+        ingredients:["Sugar","Palm oil","Hazelnuts","Cocoa","Milk solids","Lecithin"],
+        additives:[{n:"Lecithin",st:"allowed"}] }
+    },
+    lawsuits:[
+      {year:2018,country:"USA",title:'"Healthy Breakfast" Marketing Suit',desc:"Class action alleging spread marketed as nutritious despite 57% sugar.",outcome:"Settled; labelling adjusted."},
+      {year:2016,country:"FRA",title:"Palm Oil Deforestation Debate",desc:"Political push to tax palm oil in spreads.",outcome:"Tax proposal defeated after lobbying."}
+    ],
+    bypass:[
+      {code:"US FDA 101.9",desc:"Serving-size framing lets high-sugar spreads present modest per-serving numbers."},
+      {code:"EU Nutri-Score (voluntary)",desc:"EU front-of-pack scoring exposes 'E' rating; not required in US/IN."}
+    ],
+    science:[
+      {title:"Palm oil & LDL cholesterol",source:"Lipid Research (dummy)",finding:"High palmitic-acid intake raised LDL in controlled trials."},
+      {title:"Sugar-fat 'bliss point'",source:"Sensory Science (dummy)",finding:"57/31 sugar-fat ratio maximises craving response."}
+    ],
+    alternatives:[
+      {name:"100% Hazelnut Butter",brand:"PureNut",why:"No added sugar or palm oil",s100:88},
+      {name:"Dark Cocoa Almond Spread",brand:"CocoaLite",why:"Lower sugar, higher nuts",s100:71},
+      {name:"Date-sweetened Cocoa Spread",brand:"GreenSpread",why:"Natural sweetener",s100:69}
+    ]
+  },
+
+  {
+    id: "maggi", name: "2-Minute Instant Noodles", brand: "QuickMee", emoji: "🍜",
+    category: "Instant Noodles",
+    tagline: "Sodium, MSG and the famous lead-residue episode.",
+    countries: {
+      IND: { s5:1.5, s100:31, sweetener:"—",
+        nutrition:{sugar:2,fat:15,sodium:1100,caffeine:0,calories:402,protein:9,additives:6},
+        flags:["Very High Sodium","MSG (E635)","Lead-residue history","Palm Oil","TBHQ"],
+        benefits:["Iron fortified (some SKUs)"],
+        ingredients:["Wheat flour","Palm oil","Salt","Flavour enhancers (627,631)","MSG (E621)","Acidity regulators","TBHQ"],
+        additives:[{n:"MSG E621",st:"flagged"},{n:"E635 (627+631)",st:"flagged"},{n:"TBHQ E319",st:"flagged"}] },
+      JPN: { s5:2.5, s100:54, sweetener:"—",
+        nutrition:{sugar:2,fat:12,sodium:820,caffeine:0,calories:360,protein:10,additives:3},
+        flags:["High Sodium"],
+        benefits:["Lower sodium recipe","Fewer flavour enhancers","No TBHQ"],
+        ingredients:["Wheat flour","Vegetable oil","Salt","Kombu extract","Bonito flavour"],
+        additives:[{n:"Kombu extract",st:"allowed"}] },
+      GBR: { s5:2.0, s100:45, sweetener:"—",
+        nutrition:{sugar:3,fat:13,sodium:900,caffeine:0,calories:380,protein:9,additives:4},
+        flags:["High Sodium","MSG","Palm Oil"],
+        benefits:["Traffic-light labelled"],
+        ingredients:["Wheat flour","Palm oil","Salt","MSG","Yeast extract","Spices"],
+        additives:[{n:"MSG E621",st:"allowed"},{n:"Yeast extract",st:"allowed"}] },
+      USA: { s5:1.5, s100:35, sweetener:"—",
+        nutrition:{sugar:3,fat:14,sodium:1050,caffeine:0,calories:390,protein:8,additives:5},
+        flags:["Very High Sodium","MSG","TBHQ","Palm Oil"],
+        benefits:[],
+        ingredients:["Enriched wheat flour","Palm oil","Salt","MSG","TBHQ","Flavour enhancers"],
+        additives:[{n:"TBHQ",st:"flagged"},{n:"MSG",st:"allowed"}] },
+      DEU: { s5:2.5, s100:52, sweetener:"—",
+        nutrition:{sugar:2,fat:12,sodium:840,caffeine:0,calories:365,protein:10,additives:3},
+        flags:["High Sodium"],
+        benefits:["Lower sodium EU recipe","No TBHQ"],
+        ingredients:["Weizenmehl","Pflanzenöl","Salz","Hefeextrakt","Gewürze"],
+        additives:[{n:"Hefeextrakt",st:"allowed"}] },
+      CHN: { s5:1.5, s100:30, sweetener:"—",
+        nutrition:{sugar:3,fat:16,sodium:1180,caffeine:0,calories:410,protein:8,additives:7},
+        flags:["Very High Sodium","MSG","Multiple additives","Palm Oil","Preservatives"],
+        benefits:[],
+        ingredients:["Wheat flour","Palm oil","Salt","MSG","Disodium 5'-ribonucleotides","Preservatives","Colour","TBHQ"],
+        additives:[{n:"TBHQ",st:"flagged"},{n:"Colour",st:"flagged"},{n:"Preservative",st:"flagged"}] },
+      AUS: { s5:2.0, s100:44, sweetener:"—",
+        nutrition:{sugar:3,fat:13,sodium:950,caffeine:0,calories:385,protein:9,additives:4},
+        flags:["High Sodium","MSG"],
+        benefits:["Health Star Rating labelled"],
+        ingredients:["Wheat flour","Vegetable oil","Salt","MSG","Spices"],
+        additives:[{n:"MSG",st:"allowed"}] },
+      BRA: { s5:1.5, s100:37, sweetener:"—",
+        nutrition:{sugar:3,fat:14,sodium:1020,caffeine:0,calories:392,protein:8,additives:5},
+        flags:["Very High Sodium","MSG","Warning seal"],
+        benefits:["ANVISA sodium warning"],
+        ingredients:["Farinha de trigo","Óleo de palma","Sal","Glutamato monossódico","Especiarias"],
+        additives:[{n:"Glutamato",st:"allowed"}] },
+      MEX: { s5:1.5, s100:34, sweetener:"—",
+        nutrition:{sugar:3,fat:14,sodium:1080,caffeine:0,calories:395,protein:8,additives:5},
+        flags:["Very High Sodium","MSG","Black warning octagon"],
+        benefits:["NOM-051 warning labels"],
+        ingredients:["Harina de trigo","Aceite de palma","Sal","GMS","Especias"],
+        additives:[{n:"GMS",st:"allowed"}] },
+      FRA: { s5:2.5, s100:51, sweetener:"—",
+        nutrition:{sugar:2,fat:12,sodium:860,caffeine:0,calories:368,protein:10,additives:3},
+        flags:["High Sodium"],
+        benefits:["Nutri-Score labelled","No TBHQ"],
+        ingredients:["Farine de blé","Huile végétale","Sel","Extrait de levure","Épices"],
+        additives:[{n:"Extrait de levure",st:"allowed"}] }
+    },
+    lawsuits:[
+      {year:2015,country:"IND",title:"Lead & MSG Recall",desc:"Regulator ordered nationwide recall alleging lead above permissible limits and undeclared MSG.",outcome:"Product banned ~5 months, later cleared by court-ordered labs."},
+      {year:2015,country:"IND",title:"₹640cr Consumer Damages Claim",desc:"Government sought damages for unfair trade practices.",outcome:"Case ongoing / disputed."}
+    ],
+    bypass:[
+      {code:"IN FSSAI 2.2.2",desc:"Ambiguity over 'no added MSG' claims when glutamate present via other enhancers."},
+      {code:"US 21 CFR 172.185",desc:"TBHQ permitted up to 0.02% of oil — banned or restricted in Japan/EU recipes."}
+    ],
+    science:[
+      {title:"Instant noodles & metabolic syndrome",source:"J. Nutrition (dummy)",finding:"≥2 servings/week associated with higher metabolic-syndrome prevalence in women."},
+      {title:"Dietary sodium & hypertension",source:"WHO review (dummy)",finding:"One pack can exceed 45% of daily sodium limit."}
+    ],
+    alternatives:[
+      {name:"Air-dried Rice Noodles",brand:"CleanBowl",why:"No palm oil, no TBHQ",s100:78},
+      {name:"Whole-wheat Noodles + Veg Sachet",brand:"GreenPot",why:"Higher fibre, lower sodium",s100:73},
+      {name:"Millet Noodles",brand:"MilletCo",why:"Gluten-free, fortified",s100:80}
+    ]
+  },
+
+  {
+    id: "cornflakes", name: "Frosted Corn Flakes", brand: "MorningK", emoji: "🥣",
+    category: "Breakfast Cereal",
+    tagline: "Sugar coating and banned dyes diverge sharply US vs EU.",
+    countries: {
+      USA: { s5:1.5, s100:33, sweetener:"Sugar + HFCS",
+        nutrition:{sugar:37,fat:1,sodium:430,caffeine:0,calories:375,protein:5,additives:5},
+        flags:["Very High Sugar","BHT preservative","Artificial Colours","HFCS"],
+        benefits:["Vitamin fortified"],
+        ingredients:["Milled corn","Sugar","HFCS","Malt flavour","BHT","Colours (Yellow 5, Yellow 6)"],
+        additives:[{n:"Yellow 5 (E102)",st:"flagged"},{n:"BHT",st:"flagged"},{n:"HFCS",st:"flagged"}] },
+      GBR: { s5:2.5, s100:52, sweetener:"Sugar",
+        nutrition:{sugar:35,fat:0.9,sodium:410,caffeine:0,calories:375,protein:5,additives:2},
+        flags:["Very High Sugar"],
+        benefits:["No artificial colours","No BHT","Vitamin D & iron"],
+        ingredients:["Milled corn","Sugar","Barley malt flavour","Vitamins","Iron"],
+        additives:[{n:"Barley malt",st:"allowed"}] },
+      DEU: { s5:2.5, s100:53, sweetener:"Sugar",
+        nutrition:{sugar:34,fat:0.9,sodium:400,caffeine:0,calories:374,protein:5,additives:2},
+        flags:["Very High Sugar"],
+        benefits:["No synthetic dyes","Iron & B-vitamins"],
+        ingredients:["Maismehl","Zucker","Gerstenmalz","Vitamine","Eisen"],
+        additives:[{n:"Vitamins",st:"allowed"}] },
+      IND: { s5:2.0, s100:42, sweetener:"Sugar",
+        nutrition:{sugar:36,fat:1,sodium:420,caffeine:0,calories:378,protein:6,additives:3},
+        flags:["Very High Sugar","Added colour (INS 110)"],
+        benefits:["Iron fortified"],
+        ingredients:["Milled corn","Sugar","Malt","Colour (INS 110)","Vitamins","Iron"],
+        additives:[{n:"INS 110",st:"flagged"}] },
+      AUS: { s5:2.0, s100:46, sweetener:"Sugar",
+        nutrition:{sugar:34,fat:0.9,sodium:405,caffeine:0,calories:373,protein:5,additives:2},
+        flags:["Very High Sugar"],
+        benefits:["Health Star Rating","No artificial colours"],
+        ingredients:["Milled corn","Sugar","Malt extract","Vitamins","Iron"],
+        additives:[{n:"Malt extract",st:"allowed"}] },
+      FRA: { s5:2.5, s100:54, sweetener:"Sugar (reduced)",
+        nutrition:{sugar:30,fat:0.8,sodium:390,caffeine:0,calories:370,protein:5,additives:1},
+        flags:["High Sugar"],
+        benefits:["Reduced-sugar EU line","No dyes","Nutri-Score"],
+        ingredients:["Maïs","Sucre","Extrait de malt d'orge","Vitamines","Fer"],
+        additives:[{n:"Fer",st:"allowed"}] },
+      JPN: { s5:3.0, s100:60, sweetener:"Sugar (reduced)",
+        nutrition:{sugar:28,fat:0.8,sodium:360,caffeine:0,calories:365,protein:6,additives:1},
+        flags:["High Sugar"],
+        benefits:["Lowest sugar variant","No synthetic dye","Fortified"],
+        ingredients:["Corn","Sugar","Malt","Vitamins","Iron"],
+        additives:[{n:"Vitamins",st:"allowed"}] },
+      CHN: { s5:1.5, s100:35, sweetener:"Sugar + HFCS",
+        nutrition:{sugar:38,fat:1.1,sodium:440,caffeine:0,calories:380,protein:5,additives:5},
+        flags:["Very High Sugar","Artificial colours","HFCS"],
+        benefits:["Vitamin fortified"],
+        ingredients:["Corn","Sugar","HFCS","Malt","Colours","BHT"],
+        additives:[{n:"Colour",st:"flagged"},{n:"BHT",st:"flagged"}] },
+      BRA: { s5:2.0, s100:41, sweetener:"Sugar",
+        nutrition:{sugar:37,fat:1,sodium:425,caffeine:0,calories:377,protein:5,additives:3},
+        flags:["Very High Sugar","Warning seal"],
+        benefits:["ANVISA sugar warning"],
+        ingredients:["Milho","Açúcar","Malte","Corante","Vitaminas"],
+        additives:[{n:"Corante",st:"flagged"}] },
+      MEX: { s5:1.5, s100:38, sweetener:"Sugar + HFCS",
+        nutrition:{sugar:37,fat:1,sodium:430,caffeine:0,calories:378,protein:5,additives:4},
+        flags:["Very High Sugar","Black warning octagons","Artificial colour"],
+        benefits:["NOM-051 warning labels"],
+        ingredients:["Maíz","Azúcar","Jarabe de maíz","Malta","Colorante"],
+        additives:[{n:"Colorante",st:"flagged"}] }
+    },
+    lawsuits:[
+      {year:2010,country:"USA",title:"Immunity Claim Suit",desc:"FTC action over cereal marketed as boosting children's immunity.",outcome:"Claims withdrawn."},
+      {year:2023,country:"USA",title:"State-level Dye Ban Push",desc:"Legislation to ban Red 3 / certain dyes in foods.",outcome:"Partial bans enacted."}
+    ],
+    bypass:[
+      {code:"US 21 CFR 74",desc:"Synthetic colour additives (Yellow 5/6) permitted in US; several restricted or warning-labelled in EU."},
+      {code:"EU No 1333/2008 Annex V",desc:"EU requires 'may affect activity/attention in children' warning on certain azo dyes — pushing US-only dye use."}
+    ],
+    science:[
+      {title:"Azo dyes & child hyperactivity",source:"Southampton-type study (dummy)",finding:"Certain colour mixes associated with increased hyperactivity."},
+      {title:"Breakfast sugar load & satiety",source:"Appetite J. (dummy)",finding:"High-sugar cereals reduced mid-morning satiety vs whole-grain."}
+    ],
+    alternatives:[
+      {name:"Unsweetened Corn Flakes",brand:"PlainMorning",why:"No added sugar or dye",s100:83},
+      {name:"Steel-cut Oats",brand:"OatCo",why:"High fibre, no additives",s100:91},
+      {name:"Bran Flakes (no dye)",brand:"FibreFirst",why:"Higher fibre, low sugar",s100:79}
+    ]
+  },
+
+  {
+    id: "pringles", name: "Stacked Potato Crisps", brand: "StackCrisp", emoji: "🥔",
+    category: "Savoury Snack / Crisps",
+    tagline: "Acrylamide, MSG and dehydrated potato ratios.",
+    countries: {
+      USA: { s5:1.5, s100:34, sweetener:"—",
+        nutrition:{sugar:3,fat:34,sodium:640,caffeine:0,calories:536,protein:4,additives:5},
+        flags:["High Fat","High Sodium","MSG","Artificial Flavour","Acrylamide risk"],
+        benefits:[],
+        ingredients:["Dried potato","Vegetable oil","Rice flour","Wheat starch","MSG","Colours","Flavour"],
+        additives:[{n:"MSG",st:"flagged"},{n:"Colour",st:"flagged"}] },
+      GBR: { s5:2.0, s100:46, sweetener:"—",
+        nutrition:{sugar:3,fat:32,sodium:590,caffeine:0,calories:530,protein:4,additives:3},
+        flags:["High Fat","High Sodium"],
+        benefits:["Traffic-light label","Acrylamide-managed"],
+        ingredients:["Dried potatoes","Sunflower oil","Rice flour","Wheat starch","Yeast extract","Flavour"],
+        additives:[{n:"Yeast extract",st:"allowed"}] },
+      DEU: { s5:2.5, s100:50, sweetener:"—",
+        nutrition:{sugar:3,fat:31,sodium:560,caffeine:0,calories:525,protein:4,additives:2},
+        flags:["High Fat","High Sodium"],
+        benefits:["EU acrylamide limits","Cleaner flavourings"],
+        ingredients:["Kartoffeln","Sonnenblumenöl","Reismehl","Weizenstärke","Gewürze"],
+        additives:[{n:"Gewürze",st:"allowed"}] },
+      IND: { s5:1.5, s100:36, sweetener:"—",
+        nutrition:{sugar:3,fat:33,sodium:620,caffeine:0,calories:534,protein:4,additives:5},
+        flags:["High Fat","High Sodium","MSG","Added colour"],
+        benefits:[],
+        ingredients:["Dehydrated potato","Palm oil","Rice flour","MSG","Colour (INS 160c)","Flavour"],
+        additives:[{n:"MSG",st:"flagged"},{n:"INS 160c",st:"allowed"}] },
+      JPN: { s5:2.5, s100:52, sweetener:"—",
+        nutrition:{sugar:2,fat:30,sodium:520,caffeine:0,calories:518,protein:4,additives:2},
+        flags:["High Fat","Moderate Sodium"],
+        benefits:["Lower sodium recipe","Fewer additives"],
+        ingredients:["Potato","Vegetable oil","Rice flour","Kombu seasoning"],
+        additives:[{n:"Kombu",st:"allowed"}] },
+      AUS: { s5:2.0, s100:45, sweetener:"—",
+        nutrition:{sugar:3,fat:32,sodium:600,caffeine:0,calories:530,protein:4,additives:3},
+        flags:["High Fat","High Sodium"],
+        benefits:["Health Star Rating"],
+        ingredients:["Dried potato","Canola oil","Rice flour","Yeast extract","Flavour"],
+        additives:[{n:"Yeast extract",st:"allowed"}] },
+      CHN: { s5:1.5, s100:33, sweetener:"—",
+        nutrition:{sugar:3,fat:35,sodium:660,caffeine:0,calories:540,protein:4,additives:6},
+        flags:["High Fat","Very High Sodium","MSG","Multiple additives"],
+        benefits:[],
+        ingredients:["Dried potato","Palm oil","Rice flour","MSG","Disodium ribonucleotides","Colour","Flavour"],
+        additives:[{n:"MSG",st:"flagged"},{n:"Colour",st:"flagged"}] },
+      FRA: { s5:2.5, s100:51, sweetener:"—",
+        nutrition:{sugar:3,fat:31,sodium:565,caffeine:0,calories:526,protein:4,additives:2},
+        flags:["High Fat","High Sodium"],
+        benefits:["Nutri-Score labelled"],
+        ingredients:["Pomme de terre","Huile de tournesol","Farine de riz","Épices"],
+        additives:[{n:"Épices",st:"allowed"}] },
+      BRA: { s5:1.5, s100:38, sweetener:"—",
+        nutrition:{sugar:3,fat:33,sodium:630,caffeine:0,calories:533,protein:4,additives:4},
+        flags:["High Fat","High Sodium","Warning seal"],
+        benefits:["ANVISA warning"],
+        ingredients:["Batata desidratada","Óleo vegetal","Farinha de arroz","GMS","Aroma"],
+        additives:[{n:"GMS",st:"allowed"}] },
+      MEX: { s5:1.5, s100:35, sweetener:"—",
+        nutrition:{sugar:3,fat:34,sodium:650,caffeine:0,calories:536,protein:4,additives:5},
+        flags:["High Fat","Very High Sodium","Black warning octagons","MSG"],
+        benefits:["NOM-051 warnings"],
+        ingredients:["Papa deshidratada","Aceite de palma","Harina de arroz","GMS","Colorante"],
+        additives:[{n:"GMS",st:"flagged"}] }
+    },
+    lawsuits:[
+      {year:2019,country:"USA",title:'"Made from Fresh Potatoes" Suit',desc:"Class action over crisps made largely from dehydrated potato flakes.",outcome:"Settled / labelling clarified."}
+    ],
+    bypass:[
+      {code:"EU 2017/2158",desc:"EU acrylamide benchmark levels force process controls not mandated in some markets."},
+      {code:"US GRAS flavourings",desc:"Broad 'artificial flavour' declaration permitted without full ingredient disclosure."}
+    ],
+    science:[
+      {title:"Acrylamide formation in fried starch",source:"Food Chem (dummy)",finding:"Higher frying temps increased acrylamide, a probable carcinogen."},
+      {title:"Hyper-palatable snacks & overconsumption",source:"Appetite (dummy)",finding:"Fat-salt-carb combos drove passive overeating."}
+    ],
+    alternatives:[
+      {name:"Baked Veg Crisps",brand:"BakeLite",why:"Lower fat, baked not fried",s100:70},
+      {name:"Roasted Chickpeas",brand:"CrunchPea",why:"High protein & fibre",s100:86},
+      {name:"Air-popped Popcorn",brand:"PopPure",why:"Whole grain, low fat",s100:82}
+    ]
+  },
+
+  {
+    id: "dairymilk", name: "Milk Chocolate Bar", brand: "CocoBar", emoji: "🍫",
+    category: "Chocolate Confectionery",
+    tagline: "Cocoa vs vegetable-fat content and sugar order.",
+    countries: {
+      GBR: { s5:2.5, s100:50, sweetener:"Sugar",
+        nutrition:{sugar:56,fat:30,sodium:240,caffeine:20,calories:534,protein:7,additives:2},
+        flags:["Very High Sugar","High Saturated Fat"],
+        benefits:["Higher milk content","Cocoa first EU spec"],
+        ingredients:["Milk","Sugar","Cocoa butter","Cocoa mass","Vegetable fats","Emulsifiers"],
+        additives:[{n:"Emulsifier (E442)",st:"allowed"}] },
+      IND: { s5:1.5, s100:38, sweetener:"Sugar (first)",
+        nutrition:{sugar:58,fat:29,sodium:260,caffeine:18,calories:535,protein:6,additives:4},
+        flags:["Very High Sugar","Sugar listed first","Vegetable fat","Added flavour"],
+        benefits:[],
+        ingredients:["Sugar","Milk solids","Cocoa solids","Vegetable fat","Emulsifiers (442,476)","Flavour"],
+        additives:[{n:"E476",st:"allowed"},{n:"Added flavour",st:"flagged"}] },
+      USA: { s5:2.0, s100:44, sweetener:"Sugar",
+        nutrition:{sugar:57,fat:30,sodium:250,caffeine:20,calories:535,protein:7,additives:3},
+        flags:["Very High Sugar","High Saturated Fat","PGPR"],
+        benefits:[],
+        ingredients:["Sugar","Milk","Cocoa butter","Chocolate","Soy lecithin","PGPR","Vanillin"],
+        additives:[{n:"PGPR",st:"allowed"},{n:"Vanillin",st:"flagged"}] },
+      DEU: { s5:3.0, s100:56, sweetener:"Sugar",
+        nutrition:{sugar:53,fat:31,sodium:220,caffeine:22,calories:535,protein:7,additives:1},
+        flags:["High Sugar","High Saturated Fat"],
+        benefits:["Higher cocoa content","No vegetable fat substitute","Clean label"],
+        ingredients:["Vollmilch","Zucker","Kakaobutter","Kakaomasse","Emulgator (Lecithin)"],
+        additives:[{n:"Lecithin",st:"allowed"}] },
+      FRA: { s5:3.0, s100:57, sweetener:"Sugar",
+        nutrition:{sugar:52,fat:31,sodium:215,caffeine:22,calories:534,protein:7,additives:1},
+        flags:["High Sugar","High Saturated Fat"],
+        benefits:["High cocoa","No added flavour","Nutri-Score"],
+        ingredients:["Lait","Sucre","Beurre de cacao","Pâte de cacao","Lécithine"],
+        additives:[{n:"Lécithine",st:"allowed"}] },
+      JPN: { s5:2.5, s100:53, sweetener:"Sugar (reduced)",
+        nutrition:{sugar:50,fat:30,sodium:210,caffeine:22,calories:528,protein:7,additives:1},
+        flags:["High Sugar","High Saturated Fat"],
+        benefits:["Smaller portions","Clean label"],
+        ingredients:["Milk","Sugar","Cocoa butter","Cocoa mass","Lecithin"],
+        additives:[{n:"Lecithin",st:"allowed"}] },
+      AUS: { s5:2.5, s100:48, sweetener:"Sugar",
+        nutrition:{sugar:55,fat:30,sodium:245,caffeine:20,calories:533,protein:7,additives:2},
+        flags:["Very High Sugar","High Saturated Fat"],
+        benefits:["Health Star Rating"],
+        ingredients:["Milk solids","Sugar","Cocoa butter","Cocoa mass","Emulsifiers"],
+        additives:[{n:"Emulsifier",st:"allowed"}] },
+      CHN: { s5:1.5, s100:37, sweetener:"Sugar (first)",
+        nutrition:{sugar:59,fat:29,sodium:270,caffeine:18,calories:536,protein:6,additives:4},
+        flags:["Very High Sugar","Vegetable fat","Multiple emulsifiers"],
+        benefits:[],
+        ingredients:["Sugar","Milk powder","Cocoa","Vegetable fat","Emulsifiers","Flavour"],
+        additives:[{n:"Vegetable fat",st:"flagged"},{n:"Flavour",st:"flagged"}] },
+      BRA: { s5:2.0, s100:42, sweetener:"Sugar (first)",
+        nutrition:{sugar:57,fat:29,sodium:255,caffeine:18,calories:534,protein:6,additives:3},
+        flags:["Very High Sugar","Warning seal","Vegetable fat"],
+        benefits:["ANVISA warning"],
+        ingredients:["Açúcar","Leite","Cacau","Gordura vegetal","Emulsificantes"],
+        additives:[{n:"Gordura vegetal",st:"flagged"}] },
+      MEX: { s5:1.5, s100:39, sweetener:"Sugar (first)",
+        nutrition:{sugar:58,fat:29,sodium:260,caffeine:18,calories:535,protein:6,additives:3},
+        flags:["Very High Sugar","Black warning octagons"],
+        benefits:["NOM-051 warnings"],
+        ingredients:["Azúcar","Leche","Cacao","Grasa vegetal","Emulsificantes"],
+        additives:[{n:"Grasa vegetal",st:"flagged"}] }
+    },
+    lawsuits:[
+      {year:2020,country:"USA",title:"Heavy Metals in Cocoa Claim",desc:"Consumer suits over cadmium/lead traces in chocolate.",outcome:"Ongoing industry-wide testing."},
+      {year:2014,country:"IND",title:"Worm Contamination Scare",desc:"Localised contamination complaints and recalls.",outcome:"Packaging upgraded."}
+    ],
+    bypass:[
+      {code:"EU 2000/36/EC",desc:"EU caps vegetable-fat substitution for cocoa butter at 5% — some markets allow more, cutting cost."},
+      {code:"US FDA std of identity",desc:"'Milk chocolate' definition differs, allowing sugar-first formulations elsewhere."}
+    ],
+    science:[
+      {title:"Cadmium in cocoa products",source:"Env. Health (dummy)",finding:"Some bars exceeded voluntary heavy-metal thresholds."},
+      {title:"Cocoa flavanols & vascular function",source:"Nutrients (dummy)",finding:"Higher cocoa % linked to modest vascular benefit — negated by sugar load."}
+    ],
+    alternatives:[
+      {name:"85% Dark Chocolate",brand:"PureCocoa",why:"Low sugar, high flavanol",s100:80},
+      {name:"Sugar-free Milk Chocolate",brand:"CleanBar",why:"Stevia sweetened",s100:66},
+      {name:"Cocoa-nib Bar",brand:"RawCo",why:"Minimal processing",s100:74}
+    ]
+  },
+
+  {
+    id: "ketchup", name: "Tomato Ketchup", brand: "RedFields", emoji: "🍅",
+    category: "Condiment / Sauce",
+    tagline: "HFCS vs sugar and sodium levels vary widely.",
+    countries: {
+      USA: { s5:2.0, s100:44, sweetener:"HFCS + Corn Syrup",
+        nutrition:{sugar:23,fat:0,sodium:900,caffeine:0,calories:112,protein:1,additives:3},
+        flags:["High Sugar (HFCS)","High Sodium"],
+        benefits:["Lycopene from tomato"],
+        ingredients:["Tomato concentrate","HFCS","Corn syrup","Vinegar","Salt","Spice","Natural flavour"],
+        additives:[{n:"HFCS",st:"flagged"},{n:"Corn syrup",st:"flagged"}] },
+      GBR: { s5:2.5, s100:52, sweetener:"Sugar",
+        nutrition:{sugar:22,fat:0,sodium:820,caffeine:0,calories:102,protein:1.2,additives:1},
+        flags:["High Sugar","High Sodium"],
+        benefits:["No HFCS","Reduced-sugar variant available"],
+        ingredients:["Tomatoes","Sugar","Spirit vinegar","Salt","Spice extracts"],
+        additives:[{n:"Spice extract",st:"allowed"}] },
+      DEU: { s5:2.5, s100:53, sweetener:"Sugar",
+        nutrition:{sugar:21,fat:0,sodium:800,caffeine:0,calories:100,protein:1.2,additives:1},
+        flags:["High Sugar","High Sodium"],
+        benefits:["No HFCS","Clean label"],
+        ingredients:["Tomaten","Zucker","Branntweinessig","Salz","Gewürze"],
+        additives:[{n:"Gewürze",st:"allowed"}] },
+      IND: { s5:2.0, s100:41, sweetener:"Sugar + Acidity Regulators",
+        nutrition:{sugar:24,fat:0,sodium:880,caffeine:0,calories:110,protein:1,additives:3},
+        flags:["High Sugar","High Sodium","Added colour","Preservative"],
+        benefits:[],
+        ingredients:["Tomato paste","Sugar","Salt","Acidity regulator (260)","Colour (INS 110)","Preservative (211)"],
+        additives:[{n:"INS 110",st:"flagged"},{n:"Preservative 211",st:"flagged"}] },
+      FRA: { s5:2.5, s100:54, sweetener:"Sugar",
+        nutrition:{sugar:20,fat:0,sodium:790,caffeine:0,calories:98,protein:1.3,additives:1},
+        flags:["High Sugar","High Sodium"],
+        benefits:["No HFCS","Nutri-Score labelled"],
+        ingredients:["Tomates","Sucre","Vinaigre","Sel","Épices"],
+        additives:[{n:"Épices",st:"allowed"}] },
+      AUS: { s5:2.0, s100:46, sweetener:"Sugar",
+        nutrition:{sugar:22,fat:0,sodium:830,caffeine:0,calories:102,protein:1.2,additives:2},
+        flags:["High Sugar","High Sodium"],
+        benefits:["Health Star Rating"],
+        ingredients:["Tomatoes","Sugar","Vinegar","Salt","Food acid"],
+        additives:[{n:"Food acid",st:"allowed"}] },
+      JPN: { s5:3.0, s100:58, sweetener:"Sugar (reduced)",
+        nutrition:{sugar:19,fat:0,sodium:720,caffeine:0,calories:95,protein:1.3,additives:1},
+        flags:["Moderate Sugar","Moderate Sodium"],
+        benefits:["Lowest sodium recipe","Clean label"],
+        ingredients:["Tomato","Sugar","Vinegar","Salt","Spice"],
+        additives:[{n:"Spice",st:"allowed"}] },
+      CHN: { s5:1.5, s100:38, sweetener:"HFCS + Sugar",
+        nutrition:{sugar:25,fat:0,sodium:940,caffeine:0,calories:115,protein:1,additives:4},
+        flags:["High Sugar","Very High Sodium","Preservatives","Colour"],
+        benefits:[],
+        ingredients:["Tomato paste","HFCS","Sugar","Salt","Preservative","Colour","Thickener"],
+        additives:[{n:"HFCS",st:"flagged"},{n:"Colour",st:"flagged"}] },
+      BRA: { s5:2.0, s100:42, sweetener:"Sugar + HFCS",
+        nutrition:{sugar:24,fat:0,sodium:890,caffeine:0,calories:111,protein:1,additives:3},
+        flags:["High Sugar","High Sodium","Warning seal"],
+        benefits:["ANVISA warning"],
+        ingredients:["Polpa de tomate","Açúcar","Xarope de milho","Sal","Conservante"],
+        additives:[{n:"Xarope de milho",st:"flagged"}] },
+      MEX: { s5:1.5, s100:39, sweetener:"HFCS",
+        nutrition:{sugar:24,fat:0,sodium:910,caffeine:0,calories:112,protein:1,additives:3},
+        flags:["High Sugar (HFCS)","High Sodium","Black warning octagons"],
+        benefits:["NOM-051 warnings"],
+        ingredients:["Puré de tomate","Jarabe de maíz","Azúcar","Sal","Conservador"],
+        additives:[{n:"Jarabe de maíz",st:"flagged"}] }
+    },
+    lawsuits:[
+      {year:2011,country:"USA",title:'"No Preservatives" Labelling Suit',desc:"Dispute over natural claims vs added ingredients.",outcome:"Labelling revised."}
+    ],
+    bypass:[
+      {code:"US 21 CFR 155.194",desc:"Ketchup standard of identity permits corn-syrup sweeteners cheaply."},
+      {code:"EU sugar/label norms",desc:"EU pushes reformulation and clearer sugar declaration."}
+    ],
+    science:[
+      {title:"Lycopene bioavailability",source:"J. Agric Food (dummy)",finding:"Processed tomato raises lycopene absorption — a genuine plus."},
+      {title:"Hidden sugars in condiments",source:"Public Health (dummy)",finding:"Sauces contribute significant unnoticed daily sugar."}
+    ],
+    alternatives:[
+      {name:"No-added-sugar Ketchup",brand:"PureTom",why:"Sweetened with tomato only",s100:84},
+      {name:"Homemade Tomato Salsa",brand:"Fresh",why:"No preservatives",s100:90},
+      {name:"Reduced-sugar/salt Ketchup",brand:"LiteRed",why:"50% less sugar & sodium",s100:72}
+    ]
+  },
+
+  {
+    id: "lays", name: "Classic Potato Chips", brand: "CrispWave", emoji: "🥔",
+    category: "Savoury Snack / Chips",
+    tagline: "Oil type, acrylamide and flavour additives shift by region.",
+    countries: {
+      USA: { s5:1.5, s100:36, sweetener:"—",
+        nutrition:{sugar:1,fat:32,sodium:550,caffeine:0,calories:536,protein:6,additives:3},
+        flags:["High Fat","High Sodium","Artificial Flavour","Acrylamide risk"],
+        benefits:[],
+        ingredients:["Potatoes","Vegetable oil","Salt","Natural & artificial flavour"],
+        additives:[{n:"Artificial flavour",st:"flagged"}] },
+      GBR: { s5:2.0, s100:47, sweetener:"—",
+        nutrition:{sugar:1,fat:31,sodium:490,caffeine:0,calories:532,protein:6,additives:1},
+        flags:["High Fat","High Sodium"],
+        benefits:["Sunflower oil","Traffic-light label"],
+        ingredients:["Potatoes","Sunflower oil","Salt"],
+        additives:[{n:"Salt",st:"allowed"}] },
+      IND: { s5:1.5, s100:37, sweetener:"—",
+        nutrition:{sugar:1,fat:33,sodium:560,caffeine:0,calories:538,protein:6,additives:4},
+        flags:["High Fat","High Sodium","MSG","Added colour"],
+        benefits:[],
+        ingredients:["Potatoes","Palm oil","Salt","Spices","MSG","Colour (INS 160c)"],
+        additives:[{n:"MSG",st:"flagged"},{n:"INS 160c",st:"allowed"}] },
+      DEU: { s5:2.5, s100:50, sweetener:"—",
+        nutrition:{sugar:1,fat:30,sodium:470,caffeine:0,calories:528,protein:6,additives:1},
+        flags:["High Fat","Moderate Sodium"],
+        benefits:["Sunflower oil","EU acrylamide limits"],
+        ingredients:["Kartoffeln","Sonnenblumenöl","Salz"],
+        additives:[{n:"Salz",st:"allowed"}] },
+      JPN: { s5:2.5, s100:52, sweetener:"—",
+        nutrition:{sugar:1,fat:29,sodium:440,caffeine:0,calories:522,protein:6,additives:1},
+        flags:["High Fat","Moderate Sodium"],
+        benefits:["Lower sodium","Clean label"],
+        ingredients:["Potato","Vegetable oil","Salt"],
+        additives:[{n:"Salt",st:"allowed"}] },
+      AUS: { s5:2.0, s100:46, sweetener:"—",
+        nutrition:{sugar:1,fat:31,sodium:500,caffeine:0,calories:531,protein:6,additives:2},
+        flags:["High Fat","High Sodium"],
+        benefits:["Health Star Rating"],
+        ingredients:["Potatoes","Canola oil","Salt","Flavour"],
+        additives:[{n:"Flavour",st:"allowed"}] },
+      FRA: { s5:2.5, s100:51, sweetener:"—",
+        nutrition:{sugar:1,fat:30,sodium:465,caffeine:0,calories:527,protein:6,additives:1},
+        flags:["High Fat","Moderate Sodium"],
+        benefits:["Nutri-Score labelled"],
+        ingredients:["Pommes de terre","Huile de tournesol","Sel"],
+        additives:[{n:"Sel",st:"allowed"}] },
+      CHN: { s5:1.5, s100:34, sweetener:"—",
+        nutrition:{sugar:1,fat:34,sodium:580,caffeine:0,calories:542,protein:5,additives:5},
+        flags:["High Fat","Very High Sodium","MSG","Multiple additives"],
+        benefits:[],
+        ingredients:["Potato","Palm oil","Salt","MSG","Flavour","Colour","Anti-caking agent"],
+        additives:[{n:"MSG",st:"flagged"},{n:"Colour",st:"flagged"}] },
+      BRA: { s5:2.0, s100:41, sweetener:"—",
+        nutrition:{sugar:1,fat:32,sodium:540,caffeine:0,calories:535,protein:6,additives:3},
+        flags:["High Fat","High Sodium","Warning seal"],
+        benefits:["ANVISA warning"],
+        ingredients:["Batata","Óleo vegetal","Sal","Aroma"],
+        additives:[{n:"Aroma",st:"allowed"}] },
+      MEX: { s5:1.5, s100:38, sweetener:"—",
+        nutrition:{sugar:1,fat:33,sodium:560,caffeine:0,calories:538,protein:6,additives:4},
+        flags:["High Fat","High Sodium","Black warning octagons","MSG"],
+        benefits:["NOM-051 warnings"],
+        ingredients:["Papa","Aceite vegetal","Sal","GMS","Saborizante"],
+        additives:[{n:"GMS",st:"flagged"}] }
+    },
+    lawsuits:[
+      {year:2005,country:"USA",title:"Acrylamide Prop-65 Suit",desc:"California action requiring acrylamide warnings on fried chips.",outcome:"Settled; process changes + warnings."}
+    ],
+    bypass:[
+      {code:"US GRAS flavour rules",desc:"'Natural & artificial flavour' umbrella hides specific additives."},
+      {code:"EU 2017/2158",desc:"EU acrylamide benchmarks tighten frying processes."}
+    ],
+    science:[
+      {title:"Acrylamide & cancer risk",source:"IARC-type review (dummy)",finding:"Classified probable human carcinogen; higher in browned fried starch."},
+      {title:"Sodium snack intake",source:"Hypertension J. (dummy)",finding:"Frequent salty-snack intake linked to elevated BP."}
+    ],
+    alternatives:[
+      {name:"Baked Potato Crisps",brand:"BakeWave",why:"Lower fat",s100:66},
+      {name:"Kale Chips",brand:"GreenCrunch",why:"Micronutrient dense",s100:83},
+      {name:"Lentil Chips",brand:"PulseSnack",why:"Higher protein/fibre",s100:78}
+    ]
+  },
+
+  {
+    id: "redbull", name: "Energy Drink", brand: "WingFuel", emoji: "⚡",
+    category: "Energy Drink",
+    tagline: "Caffeine caps and taurine limits differ by regulator.",
+    countries: {
+      USA: { s5:1.5, s100:33, sweetener:"Sucrose + Glucose",
+        nutrition:{sugar:11,fat:0,sodium:105,caffeine:32,calories:45,protein:0,additives:5},
+        flags:["High Caffeine","High Sugar","Taurine","Artificial Colour","Acidity regulators"],
+        benefits:["B-vitamins"],
+        ingredients:["Carbonated water","Sucrose","Glucose","Taurine","Caffeine","Colours","B-vitamins"],
+        additives:[{n:"Colour",st:"flagged"},{n:"Taurine",st:"allowed"}] },
+      GBR: { s5:2.0, s100:44, sweetener:"Sugar / Sweeteners",
+        nutrition:{sugar:11,fat:0,sodium:100,caffeine:32,calories:45,protein:0,additives:4},
+        flags:["High Caffeine","High Sugar","Age-restricted sale (some retailers)"],
+        benefits:["'High caffeine' warning label required"],
+        ingredients:["Carbonated water","Sugar","Taurine","Caffeine","Colours","Vitamins"],
+        additives:[{n:"Colour",st:"allowed"}] },
+      DEU: { s5:2.0, s100:45, sweetener:"Sugar",
+        nutrition:{sugar:11,fat:0,sodium:100,caffeine:32,calories:45,protein:0,additives:3},
+        flags:["High Caffeine","High Sugar"],
+        benefits:["EU caffeine warning label","Taurine limit enforced"],
+        ingredients:["Wasser","Zucker","Taurin","Koffein","Vitamine"],
+        additives:[{n:"Taurin",st:"allowed"}] },
+      FRA: { s5:2.0, s100:46, sweetener:"Sugar",
+        nutrition:{sugar:11,fat:0,sodium:100,caffeine:32,calories:45,protein:0,additives:3},
+        flags:["High Caffeine","High Sugar"],
+        benefits:["Historically restricted; caffeine warning"],
+        ingredients:["Eau","Sucre","Taurine","Caféine","Vitamines"],
+        additives:[{n:"Taurine",st:"allowed"}] },
+      IND: { s5:1.5, s100:34, sweetener:"Sugar",
+        nutrition:{sugar:12,fat:0,sodium:110,caffeine:30,calories:47,protein:0,additives:5},
+        flags:["High Caffeine","High Sugar","Added colour","Preservative"],
+        benefits:["Caffeine cap enforced (FSSAI)"],
+        ingredients:["Carbonated water","Sugar","Taurine","Caffeine","Colour (INS 133)","Preservative"],
+        additives:[{n:"INS 133",st:"flagged"},{n:"Preservative",st:"flagged"}] },
+      AUS: { s5:2.0, s100:43, sweetener:"Sugar",
+        nutrition:{sugar:11,fat:0,sodium:100,caffeine:32,calories:45,protein:0,additives:4},
+        flags:["High Caffeine","High Sugar"],
+        benefits:["Caffeine cap 320mg/L enforced","Advisory statement"],
+        ingredients:["Carbonated water","Sugar","Taurine","Caffeine","Colour","Vitamins"],
+        additives:[{n:"Colour",st:"allowed"}] },
+      JPN: { s5:2.5, s100:50, sweetener:"Sugar (reduced)",
+        nutrition:{sugar:9,fat:0,sodium:90,caffeine:30,calories:40,protein:0,additives:2},
+        flags:["High Caffeine","Moderate Sugar"],
+        benefits:["Lower sugar recipe","Fewer additives"],
+        ingredients:["Water","Sugar","Taurine","Caffeine","Vitamins"],
+        additives:[{n:"Vitamins",st:"allowed"}] },
+      CHN: { s5:1.5, s100:32, sweetener:"Sugar",
+        nutrition:{sugar:13,fat:0,sodium:115,caffeine:33,calories:50,protein:0,additives:6},
+        flags:["High Caffeine","High Sugar","Multiple additives","Colour","Preservative"],
+        benefits:[],
+        ingredients:["Water","Sugar","Taurine","Caffeine","Colour","Preservative","Acidity regulator"],
+        additives:[{n:"Colour",st:"flagged"},{n:"Preservative",st:"flagged"}] },
+      BRA: { s5:1.5, s100:38, sweetener:"Sugar",
+        nutrition:{sugar:12,fat:0,sodium:108,caffeine:31,calories:48,protein:0,additives:4},
+        flags:["High Caffeine","High Sugar","Warning seal"],
+        benefits:["ANVISA sugar warning"],
+        ingredients:["Água","Açúcar","Taurina","Cafeína","Corante","Vitaminas"],
+        additives:[{n:"Corante",st:"flagged"}] },
+      MEX: { s5:1.5, s100:35, sweetener:"Sugar",
+        nutrition:{sugar:12,fat:0,sodium:110,caffeine:32,calories:48,protein:0,additives:5},
+        flags:["High Caffeine","High Sugar","Black warning octagons"],
+        benefits:["NOM-051 warnings"],
+        ingredients:["Agua","Azúcar","Taurina","Cafeína","Colorante","Vitaminas"],
+        additives:[{n:"Colorante",st:"flagged"}] }
+    },
+    lawsuits:[
+      {year:2014,country:"USA",title:'"Gives You Wings" Suit',desc:"Class action over performance/energy claims.",outcome:"Settled ~$13M; consumer refunds."},
+      {year:2013,country:"FRA",title:"Cardiac Event Investigation",desc:"Probe into energy-drink links to cardiac incidents.",outcome:"Warning labels reinforced."}
+    ],
+    bypass:[
+      {code:"US DSHEA (dietary supplement)",desc:"Marketing as supplement historically dodged beverage caffeine limits."},
+      {code:"EU 1169/2011",desc:"EU mandates 'high caffeine content' warning + amount — not always required elsewhere."}
+    ],
+    science:[
+      {title:"Energy drinks & cardiac rhythm",source:"Cardiology (dummy)",finding:"High caffeine+taurine doses altered QT interval in some subjects."},
+      {title:"Adolescent caffeine intake",source:"Pediatrics (dummy)",finding:"Energy drinks a leading source of excess caffeine in teens."}
+    ],
+    alternatives:[
+      {name:"Cold Brew Coffee (unsweetened)",brand:"BrewCo",why:"Caffeine without added sugar/dye",s100:77},
+      {name:"Green Tea",brand:"LeafPure",why:"Moderate caffeine + antioxidants",s100:88},
+      {name:"Electrolyte Water",brand:"HydraLite",why:"No caffeine, no sugar",s100:92}
+    ]
+  },
+
+  {
+    id: "bueno", name: "Wafer Chocolate Bar", brand: "WaferJoy", emoji: "🍬",
+    category: "Chocolate Wafer",
+    tagline: "Palm oil, hazelnut % and sugar order across markets.",
+    countries: {
+      DEU: { s5:2.5, s100:52, sweetener:"Sugar",
+        nutrition:{sugar:40,fat:37,sodium:120,caffeine:8,calories:571,protein:8,additives:2},
+        flags:["High Sugar","Very High Saturated Fat","Palm Oil"],
+        benefits:["Higher hazelnut content EU","Clean label"],
+        ingredients:["Milk chocolate","Sugar","Palm oil","Hazelnuts","Wheat flour","Lecithin"],
+        additives:[{n:"Lecithin",st:"allowed"}] },
+      FRA: { s5:2.5, s100:53, sweetener:"Sugar",
+        nutrition:{sugar:39,fat:36,sodium:118,caffeine:8,calories:568,protein:8,additives:1},
+        flags:["High Sugar","Very High Saturated Fat","Palm Oil"],
+        benefits:["Nutri-Score labelled"],
+        ingredients:["Chocolat au lait","Sucre","Huile de palme","Noisettes","Farine","Lécithine"],
+        additives:[{n:"Lécithine",st:"allowed"}] },
+      GBR: { s5:2.0, s100:47, sweetener:"Sugar",
+        nutrition:{sugar:41,fat:37,sodium:122,caffeine:8,calories:572,protein:7,additives:2},
+        flags:["High Sugar","Very High Saturated Fat","Palm Oil"],
+        benefits:["Traffic-light label"],
+        ingredients:["Milk chocolate","Sugar","Palm oil","Hazelnuts","Wheat flour","Emulsifier"],
+        additives:[{n:"Emulsifier",st:"allowed"}] },
+      IND: { s5:1.5, s100:37, sweetener:"Sugar (first)",
+        nutrition:{sugar:43,fat:37,sodium:130,caffeine:7,calories:576,protein:6,additives:4},
+        flags:["Very High Sugar","Very High Saturated Fat","Palm Oil","Added flavour"],
+        benefits:[],
+        ingredients:["Sugar","Palm oil","Milk solids","Wheat flour","Cocoa","Hazelnut paste","Flavour","Emulsifiers"],
+        additives:[{n:"Added flavour",st:"flagged"},{n:"Emulsifier 476",st:"allowed"}] },
+      USA: { s5:2.0, s100:43, sweetener:"Sugar",
+        nutrition:{sugar:42,fat:37,sodium:125,caffeine:8,calories:573,protein:7,additives:3},
+        flags:["Very High Sugar","Very High Saturated Fat","Palm Oil","Vanillin"],
+        benefits:[],
+        ingredients:["Sugar","Palm oil","Milk","Wheat flour","Cocoa","Hazelnuts","Vanillin","Lecithin"],
+        additives:[{n:"Vanillin",st:"flagged"}] },
+      JPN: { s5:2.5, s100:50, sweetener:"Sugar (reduced)",
+        nutrition:{sugar:37,fat:35,sodium:110,caffeine:8,calories:558,protein:8,additives:1},
+        flags:["High Sugar","Very High Saturated Fat"],
+        benefits:["Smaller portions","Clean label"],
+        ingredients:["Milk chocolate","Sugar","Palm oil","Hazelnuts","Wheat flour","Lecithin"],
+        additives:[{n:"Lecithin",st:"allowed"}] },
+      AUS: { s5:2.0, s100:45, sweetener:"Sugar",
+        nutrition:{sugar:41,fat:37,sodium:123,caffeine:8,calories:572,protein:7,additives:2},
+        flags:["Very High Sugar","Very High Saturated Fat","Palm Oil"],
+        benefits:["Health Star Rating"],
+        ingredients:["Milk chocolate","Sugar","Palm oil","Hazelnuts","Wheat flour","Emulsifier"],
+        additives:[{n:"Emulsifier",st:"allowed"}] },
+      CHN: { s5:1.5, s100:35, sweetener:"Sugar (first)",
+        nutrition:{sugar:44,fat:38,sodium:135,caffeine:7,calories:580,protein:6,additives:5},
+        flags:["Very High Sugar","Very High Saturated Fat","Palm Oil","Multiple additives"],
+        benefits:[],
+        ingredients:["Sugar","Palm oil","Milk powder","Wheat flour","Cocoa","Emulsifiers","Flavour","Colour"],
+        additives:[{n:"Colour",st:"flagged"},{n:"Flavour",st:"flagged"}] },
+      BRA: { s5:2.0, s100:40, sweetener:"Sugar (first)",
+        nutrition:{sugar:42,fat:37,sodium:128,caffeine:7,calories:575,protein:6,additives:3},
+        flags:["Very High Sugar","Very High Saturated Fat","Warning seal"],
+        benefits:["ANVISA warning"],
+        ingredients:["Açúcar","Óleo de palma","Leite","Farinha","Cacau","Avelãs","Emulsificantes"],
+        additives:[{n:"Emulsificante",st:"allowed"}] },
+      MEX: { s5:1.5, s100:38, sweetener:"Sugar (first)",
+        nutrition:{sugar:43,fat:37,sodium:130,caffeine:7,calories:576,protein:6,additives:4},
+        flags:["Very High Sugar","Very High Saturated Fat","Black warning octagons"],
+        benefits:["NOM-051 warnings"],
+        ingredients:["Azúcar","Aceite de palma","Leche","Harina","Cacao","Avellanas","Emulsificantes"],
+        additives:[{n:"Emulsificante",st:"allowed"}] }
+    },
+    lawsuits:[
+      {year:2022,country:"FRA",title:"Salmonella Recall (industry)",desc:"Contamination recall at a confectionery plant affecting wafer/chocolate lines.",outcome:"Large recall; plant remediation."}
+    ],
+    bypass:[
+      {code:"EU 2000/36/EC",desc:"Cocoa-butter substitution limits differ; palm-oil heavy recipes cut cost."},
+      {code:"US serving-size framing",desc:"Per-portion labelling softens very high sugar/fat totals."}
+    ],
+    science:[
+      {title:"Palm oil & cardiovascular markers",source:"Lipids (dummy)",finding:"High palmitic-acid load associated with adverse lipid profile."},
+      {title:"Ultra-processed snacks & weight",source:"BMJ-type (dummy)",finding:"Higher UPF intake linked to weight gain over time."}
+    ],
+    alternatives:[
+      {name:"Dark Chocolate Hazelnut Wafer",brand:"PureWafer",why:"Lower sugar, real hazelnut",s100:69},
+      {name:"Oat & Nut Bar",brand:"GrainBar",why:"Whole-grain, higher fibre",s100:81},
+      {name:"Fruit & Nut Mix",brand:"TrailCo",why:"Whole foods, no palm oil",s100:87}
+    ]
+  }
+];
+
+/* Expose to window for the app */
+window.COUNTRIES = COUNTRIES;
+window.PRODUCTS = PRODUCTS;
+</script>
+<!-- APP -->
+<script>
+let charts={};
+const money=n=>n.toLocaleString();
+const el=id=>document.getElementById(id);
+
+/* ---- theme ---- */
+function setTheme(t){document.body.setAttribute('data-theme',t==='dark'?'dark':t);
+  setTimeout(render,60);}
+
+/* ---- init dropdowns ---- */
+function initControls(){
+  const cs=el('countrySel'), ps=el('productSel');
+  Object.entries(COUNTRIES).forEach(([code,c])=>{
+    const o=document.createElement('option');o.value=code;o.textContent=`${c.flag}  ${c.name}`;cs.appendChild(o);
+  });
+  cs.value='IND';
+  PRODUCTS.forEach(p=>{
+    const o=document.createElement('option');o.value=p.id;o.textContent=`${p.emoji}  ${p.name} — ${p.brand}`;ps.appendChild(o);
+  });
+  ps.value='coke';
+}
+
+/* ---- helpers ---- */
+function cssv(v){return getComputedStyle(document.body).getPropertyValue(v).trim();}
+function scoreColor(s){return s>=55?cssv('--good'):s>=42?cssv('--warn'):cssv('--bad');}
+function stars(s5){const full=Math.round(s5);return '★'.repeat(full)+'☆'.repeat(5-full);}
+function destroyCharts(){Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};}
+
+function rankedCountries(p){
+  return Object.entries(p.countries).map(([code,d])=>({code,...d,flag:COUNTRIES[code].flag,name:COUNTRIES[code].name}))
+    .sort((a,b)=>b.s100-a.s100);
+}
+
+/* ================= RENDER ================= */
+function render(){
+  const uc=el('countrySel').value;
+  const p=PRODUCTS.find(x=>x.id===el('productSel').value);
+  const ranked=rankedCountries(p);
+  const best=ranked[0], worst=ranked[ranked.length-1];
+  const user={code:uc,...p.countries[uc],flag:COUNTRIES[uc].flag,name:COUNTRIES[uc].name};
+  destroyCharts();
+
+  renderLive(p,user,best,worst,ranked);
+  renderHero(p,user);
+  renderRank(p,ranked,uc,best.code,worst.code);
+  renderTri(p,best,worst,user);
+  renderCompare(p,best,worst,user);
+  renderLegal(p);
+  renderScience(p,ranked);
+}
+
+function renderLive(p,user,best,worst,ranked){
+  el('liveChips').innerHTML=`
+    <span class="lc">Product: <b>${p.emoji} ${p.name}</b></span>
+    <span class="lc">Markets tracked: <b>${ranked.length}</b></span>
+    <span class="lc">Best: <b>${best.flag} ${best.s100}</b></span>
+    <span class="lc">Worst: <b>${worst.flag} ${worst.s100}</b></span>
+    <span class="lc" style="border-color:var(--accent)">You: <b>${user.flag} ${user.s100}/100</b></span>`;
+}
+
+/* ---- Hero ---- */
+function renderHero(p,u){
+  const col=scoreColor(u.s100);
+  const facts=(u.flags||[]).map(f=>`<span class="pill bad">⚠ ${f}</span>`).join('');
+  const bens=(u.benefits&&u.benefits.length)?u.benefits.map(b=>`<span class="pill good">✓ ${b}</span>`).join(''):'<span class="pill info">No notable benefits flagged</span>';
+  const alts=p.alternatives.map(a=>`<div class="alt"><div class="an">${a.name}</div><div class="ab">${a.brand}</div><div class="aw">${a.why}</div><div class="as">Score ${a.s100}/100</div></div>`).join('');
+  el('heroCard').className='card hero fade';
+  el('heroCard').innerHTML=`
+    <div class="gaugewrap">
+      <div class="gauge-c"><canvas id="gauge"></canvas>
+        <div class="gauge-center"><div class="big" style="color:${col}">${u.s100}</div><div class="of">out of 100</div>
+          <div class="stars" style="color:${col}">${stars(u.s5)}</div><div class="of">${u.s5.toFixed(1)} / 5 rating</div></div>
+      </div>
+      <div class="pill ${u.s100>=55?'good':u.s100>=42?'info':'bad'}">${u.s100>=55?'Superior formulation':u.s100>=42?'Average formulation':'Sub-standard formulation'}</div>
+    </div>
+    <div class="hero-right">
+      <div class="prod-title"><span class="prod-emoji">${p.emoji}</span><div>
+        <h3>${p.name} <span style="font-size:14px;color:var(--sub)">· ${p.brand}</span></h3>
+        <div class="cat">${p.category} &nbsp;•&nbsp; ${u.flag} ${u.name} label</div></div>
+      </div>
+      <div class="prod-tag">"${p.tagline}"</div>
+      <div class="macro-mini">
+        <div class="mm"><div class="v" style="color:var(--bad)">${u.nutrition.sugar}g</div><div class="k">Sugar</div></div>
+        <div class="mm"><div class="v" style="color:var(--warn)">${u.nutrition.fat}g</div><div class="k">Fat</div></div>
+        <div class="mm"><div class="v">${u.nutrition.sodium}mg</div><div class="k">Sodium</div></div>
+        <div class="mm"><div class="v">${u.nutrition.caffeine||0}mg</div><div class="k">Caffeine</div></div>
+        <div class="mm"><div class="v">${u.nutrition.calories}</div><div class="k">kcal</div></div>
+        <div class="mm"><div class="v" style="color:${u.nutrition.additives>=4?'var(--bad)':'var(--good)'}">${u.nutrition.additives}</div><div class="k">Additives</div></div>
+      </div>
+      <div class="lbl">Key nutritional facts / flags</div><div class="pill-row">${facts}</div>
+      <div class="lbl">Benefits</div><div class="pill-row">${bens}</div>
+      <div class="lbl" style="color:var(--good)">🌱 Recommended healthier alternatives</div>
+      <div class="alts">${alts}</div>
+      <div class="lbl">Sweetener / base</div><div class="pill-row"><span class="pill info">${u.sweetener||'—'}</span></div>
+    </div>`;
+  // gauge
+  const rest=100-u.s100;
+  charts.gauge=new Chart(el('gauge'),{type:'doughnut',
+    data:{datasets:[{data:[u.s100,rest],backgroundColor:[col,cssv('--panel')],borderWidth:0}]},
+    options:{cutout:'80%',rotation:-90,circumference:360,plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+}
+
+/* ---- Ranking ---- */
+function renderRank(p,ranked,uc,bestC,worstC){
+  charts.rank=new Chart(el('rankChart'),{type:'bar',
+    data:{labels:ranked.map(r=>COUNTRIES[r.code].flag+' '+r.code),
+      datasets:[{label:'Integrity score /100',data:ranked.map(r=>r.s100),
+        backgroundColor:ranked.map(r=>r.code===uc?cssv('--accent'):r.code===bestC?cssv('--good'):r.code===worstC?cssv('--bad'):cssv('--panel2')),
+        borderRadius:6}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>COUNTRIES[ranked[i[0].dataIndex].code].name}}},
+      scales:{x:{max:100,grid:{color:cssv('--line')},ticks:{color:cssv('--mut')}},y:{grid:{display:false},ticks:{color:cssv('--sub')}}}}});
+  el('rankList').innerHTML=ranked.map((r,i)=>{
+    const cls=r.code===uc?'you':r.code===bestC?'best':r.code===worstC?'worst':'';
+    const col=scoreColor(r.s100);
+    return `<div class="rrow ${cls}"><div class="rrank">#${i+1}</div><div class="rflag">${r.flag}</div>
+      <div class="rname">${r.name}<small>${r.sweetener||r.category||''} · ${r.nutrition.additives} additives ${r.code===uc?'· YOUR MARKET':''}</small></div>
+      <div class="rbar"><i style="width:${r.s100}%;background:${col}"></i></div>
+      <div class="rscore" style="color:${col}">${r.s100}</div></div>`;
+  }).join('');
+}
+
+/* ---- Three country ---- */
+function triCard(band,label,d){
+  const col=scoreColor(d.s100);
+  const flags=(d.flags||[]).slice(0,4).map(f=>`<span class="pill bad">${f}</span>`).join('')||'<span class="pill good">Clean profile</span>';
+  return `<div class="card tcard fade"><div class="band ${band}">${label}</div><div class="tbody">
+    <div class="tcnt"><span class="tflag">${d.flag}</span><h4>${d.name}</h4></div>
+    <div class="tscore" style="color:${col}">${d.s100}<span style="font-size:14px;color:var(--mut)"> /100 &nbsp; ${stars(d.s5)}</span></div>
+    <div class="tprogress"><i style="width:${d.s100}%;background:${col}"></i></div>
+    <div class="lbl">Sweetener / base</div><div style="font-size:13px;color:var(--sub);margin-bottom:8px">${d.sweetener||'—'}</div>
+    <div class="lbl">Flags</div><div class="mini-flags">${flags}</div></div></div>`;
+}
+function renderTri(p,best,worst,user){
+  el('triCards').innerHTML=triCard('best','🏆 Best Quality Market',best)+
+    triCard('worst','⚠️ Worst Quality Market',worst)+
+    triCard('you','📍 Your Market',user);
+}
+
+/* ---- Comparison ---- */
+function renderCompare(p,best,worst,user){
+  const set=[{k:'Best',d:best,c:cssv('--good')},{k:'Worst',d:worst,c:cssv('--bad')},{k:'You',d:user,c:cssv('--accent')}];
+  // grouped bar (sugar/fat/sodium scaled, caffeine)
+  charts.nut=new Chart(el('nutBar'),{type:'bar',
+    data:{labels:['Sugar (g)','Fat (g)','Sodium (mg÷10)','Caffeine (mg)','Additives'],
+      datasets:set.map(s=>({label:`${s.d.flag} ${s.k}`,backgroundColor:s.c,borderRadius:5,
+        data:[s.d.nutrition.sugar,s.d.nutrition.fat,+(s.d.nutrition.sodium/10).toFixed(0),s.d.nutrition.caffeine||0,s.d.nutrition.additives]}))},
+    options:{plugins:{legend:{labels:{color:cssv('--sub')}}},
+      scales:{x:{grid:{display:false},ticks:{color:cssv('--mut')}},y:{grid:{color:cssv('--line')},ticks:{color:cssv('--mut')}}}}});
+  // radar
+  const norm=(v,m)=>Math.min(100,Math.round(v/m*100));
+  charts.radar=new Chart(el('radar'),{type:'radar',
+    data:{labels:['Sugar','Fat','Sodium','Caffeine','Calories','Additives'],
+      datasets:set.map(s=>({label:`${s.d.flag} ${s.k}`,borderColor:s.c,backgroundColor:s.c+'33',pointBackgroundColor:s.c,
+        data:[norm(s.d.nutrition.sugar,60),norm(s.d.nutrition.fat,40),norm(s.d.nutrition.sodium,1200),
+              norm(s.d.nutrition.caffeine||0,35),norm(s.d.nutrition.calories,600),norm(s.d.nutrition.additives,7)]}))},
+    options:{plugins:{legend:{labels:{color:cssv('--sub')}}},
+      scales:{r:{angleLines:{color:cssv('--line')},grid:{color:cssv('--line')},pointLabels:{color:cssv('--sub'),font:{size:11}},
+        ticks:{display:false},suggestedMin:0,suggestedMax:100}}}});
+  // table
+  const rows=[['Sugar (g)','sugar'],['Fat (g)','fat'],['Sodium (mg)','sodium'],['Caffeine (mg)','caffeine'],['Calories (kcal)','calories'],['Protein (g)','protein'],['Synthetic additives','additives']];
+  el('nutTable').innerHTML=`<thead><tr><th>Nutrient / 100g</th><th class="num">${best.flag} Best · ${best.code}</th><th class="num">${worst.flag} Worst · ${worst.code}</th><th class="num">${user.flag} You · ${user.code}</th></tr></thead><tbody>`+
+    rows.map(([lbl,key])=>`<tr><td>${lbl}</td><td class="num">${best.nutrition[key]||0}</td><td class="num">${worst.nutrition[key]||0}</td><td class="num" style="color:var(--accent)">${user.nutrition[key]||0}</td></tr>`).join('')+
+    `<tr><td><b>Integrity score</b></td><td class="num" style="color:var(--good)">${best.s100}</td><td class="num" style="color:var(--bad)">${worst.s100}</td><td class="num" style="color:var(--accent)">${user.s100}</td></tr></tbody>`;
+  // ingredient columns
+  const col=(title,d,band)=>{
+    const ing=(d.ingredients||[]).map(i=>`<li>${i}</li>`).join('');
+    const add=(d.additives||[]).map(a=>`<li>${a.n}<span class="addbadge ${a.st}">${a.st}</span></li>`).join('');
+    return `<div class="ingcol"><h5>${band} ${d.flag} ${d.name}</h5><ul>${ing}</ul>
+      <div class="lbl" style="margin:10px 0 6px">Additive status</div><ul>${add||'<li>None declared</li>'}</ul></div>`;
+  };
+  el('ingCols').innerHTML=col('Best',best,'🏆')+col('Worst',worst,'⚠️')+col('You',user,'📍');
+}
+
+/* ---- Legal ---- */
+function renderLegal(p){
+  el('lawTimeline').innerHTML=(p.lawsuits||[]).map(l=>`<div class="tl">
+    <div class="dot">${l.year}</div><div class="body">
+      <div class="t">${l.title}</div><div class="cc">${COUNTRIES[l.country]?COUNTRIES[l.country].flag+' '+COUNTRIES[l.country].name:l.country}</div>
+      <div class="m">${l.desc}</div><div class="o">↳ ${l.outcome}</div></div></div>`).join('')||'<div style="color:var(--mut)">No public cases logged in prototype.</div>';
+  el('regList').innerHTML=(p.bypass||[]).map(r=>`<div class="reg"><div class="code">${r.code}</div><div class="rd">${r.desc}</div></div>`).join('');
+}
+
+/* ---- Science ---- */
+function renderScience(p,ranked){
+  el('sciList').innerHTML='<div class="lbl">🧪 Research findings tied to key ingredients</div>'+
+    (p.science||[]).map(s=>`<div class="sci"><div class="st">${s.title}</div><div class="ss">${s.source}</div><div class="sf">${s.finding}</div></div>`).join('');
+  charts.scatter=new Chart(el('scatter'),{type:'scatter',
+    data:{datasets:[{label:'Markets',data:ranked.map(r=>({x:r.nutrition.additives,y:r.s100,c:r.code})),
+      backgroundColor:ranked.map(r=>scoreColor(r.s100)),pointRadius:9,pointHoverRadius:12}]},
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>{const d=i.raw;return `${COUNTRIES[d.c].name}: ${d.y}/100, ${d.x} additives`}}}},
+      scales:{x:{title:{display:true,text:'Synthetic additive count',color:cssv('--mut')},grid:{color:cssv('--line')},ticks:{color:cssv('--mut')}},
+        y:{title:{display:true,text:'Integrity score',color:cssv('--mut')},max:100,grid:{color:cssv('--line')},ticks:{color:cssv('--mut')}}}}});
+}
+
+/* boot */
+initControls();
+Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
+render();
+</script>
+</body>
+</html>
